@@ -181,7 +181,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Perform Joint Symbolic Analysis')
-    parser.add_argument('--data_dict', metavar='path', required=True,
+    parser.add_argument('--data_dict', metavar='dict', required=True,
                         help='dictionary containing volunteers data')
     parser.add_argument('--is_fv', metavar='bool', required=True,
                         help='signal used to calculate SAP: False for ABP, True for FV')
