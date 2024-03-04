@@ -2,8 +2,9 @@
 ## Table of contents
 * [General info](#general-info)
 * [Technologies](#technologies)
-* [Funding](#funding)
 * [List of Research Articles](#list-of-research-articles)
+* [Funding](#funding)
+
 
 ## General info
 This project involves a script designed for performing Joint Symbolic Analysis on ABP data recorded during controlled 
