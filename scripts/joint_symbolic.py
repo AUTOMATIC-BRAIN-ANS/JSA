@@ -177,18 +177,4 @@ def joint_symbolic(data_dict: dict, is_fv: bool, heatmap_path: str, jsd_path: st
     save_jsd(is_fv, jsd_df, jsd_path)
 
 
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Perform Joint Symbolic Analysis')
-    parser.add_argument('--data_dict', metavar='dict', required=True,
-                        help='dictionary containing volunteers data')
-    parser.add_argument('--is_fv', metavar='bool', required=True,
-                        help='signal used to calculate SAP: False for ABP, True for FV')
-    parser.add_argument('--heatmap_path', metavar='path', required=True,
-                        help='path where the word density distribution matrix will be saved')
-    parser.add_argument('--jsd_path', metavar='path', required=True,
-                        help='path where the jsd file will be saved')
-    args = parser.parse_args()
-    joint_symbolic(data_dict=args.data_dict, is_fv=args.is_fv, heatmap_path=args.heatmap_path, jsd_path=args.jsd_path)
 
