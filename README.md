@@ -3,6 +3,7 @@
 * [General info](#general-info)
 * [Technologies](#technologies)
 * [List of Research Articles](#list-of-research-articles)
+* [Acknowledgment](#acknowlesgment)
 * [Funding](#funding)
 
 
@@ -35,6 +36,9 @@ in dilated cardiomyopathy,” _IEEE Trans Biomed Eng._, vol. 2, pp. 2112–
 rate and systolic blood pressure in normal pregnancy,” _Med. Biol. Eng.
 Comput._, vol. 40, pp. 241–245, 2002.
 
+## Acknowledgment
+Author: Monika Najdek (261835@student.pwr.edu.pl)
+Project Investigator: Agnieszka Uryga (agnieszka.uryga@pwr.edu.pl)
 
 ## Funding
 This project, "AUTOMATIC: Analysis of the relationship between the AUTOnoMic nervous system and cerebral AutoregulaTion
