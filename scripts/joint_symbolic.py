@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from numpy import ndarray
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, windows, detrend
 
 plt.style.use('seaborn-v0_8-ticks')
 
@@ -22,6 +22,32 @@ def get_peaks(signal: pd.Series, distance: int = 115) -> tuple[ndarray, pd.Serie
     peaks, _ = find_peaks(signal, distance=distance)
     difference = np.diff(peaks)
     return peaks, signal[peaks], difference
+
+
+def calculate_fundamental_component(signal, fs=200, low_f=0.66, high_f=3):
+    """
+    Calculate fundamental component of a signal
+    Params:
+        signal: a dataframe column containing signal values
+        fs: sampling frequency of the signal
+        low_f: lower bound of the frequency range
+        high_f: upper bound of the frequency range
+    Returns:
+        fund_f * 60: fundamental frequency of the signal
+    """
+    n_fft = len(signal)
+    win_fft_amp = np.fft.rfft(detrend(signal) * windows.hann(n_fft), n=n_fft)
+    corr_factor = n_fft / np.sum(windows.hann(n_fft))
+    win_fft_amp = abs(win_fft_amp) * 2 / n_fft * corr_factor
+
+    win_fft_f = np.fft.rfftfreq(n_fft, d=1 / fs)
+    f_low = int(low_f * n_fft / fs)
+    f_upp = int(high_f * n_fft / fs)
+    win_fft_amp_range = win_fft_amp[f_low:f_upp]
+    fund_idx = np.argmax(win_fft_amp_range) + f_low
+
+    fund_f = win_fft_f[fund_idx]
+    return fund_f * 60
 
 
 def make_empty_matrix() -> pd.DataFrame:
@@ -66,7 +92,8 @@ def get_diff_df(dataframe: pd.DataFrame, is_fv: bool) -> pd.DataFrame:
 
 
 def make_and_save_heatmap(relative_array: pd.DataFrame, breath_frequency: str, is_fv: bool, heatmap_path: str,
-                          fontsize: int = 10, fig_extension: str = ".pdf", dpi: int = 600) -> None:
+                          fontsize: int = 10, fig_extension: str = ".pdf", dpi: int = 600, vmin: float = 0.0,
+                          vmax: float = 0.2) -> None:
     """
     Save word density distribution matrix as a PDF and a CSV file to selected path
     Params:
@@ -77,9 +104,11 @@ def make_and_save_heatmap(relative_array: pd.DataFrame, breath_frequency: str, i
         fontsize (int): chart label font size, by default set to 10 pt
         fig_extension (str): extension of the saved figure, by default set to .pdf
         dpi (int): dpi of the saved figure, by default set to 600
+        vmin (float): minimal value of the colorbar, by default set to 0
+        vmax (float): maximal value of the colorbar, by default set to 0.2
     """
     color_palette = sns.color_palette("ch:-.24", as_cmap=True)
-    my_heatmap = sns.heatmap(relative_array, cmap=color_palette, annot=True)
+    my_heatmap = sns.heatmap(relative_array, cmap=color_palette, annot=True, vmin=vmin, vmax=vmax, fmt=".2f")
     my_heatmap.xaxis.tick_top()
     my_heatmap.xaxis.set_ticks_position('none')
     plt.xlabel('SAP', fontsize=fontsize)
@@ -110,26 +139,19 @@ def save_jsd(is_fv: bool, jsd_df: pd.DataFrame, jsd_path: str) -> None:
         jsd_df.T.to_csv(jsd_path + "\\jsd_fv.csv")
 
 
-def add_mean_params(jsd_df: pd.DataFrame, dataframe: pd.DataFrame, patient_number: str, freq: str,
-                    window_size: int = 2000) -> pd.DataFrame:
+def add_mean_hr(jsd_df: pd.DataFrame, dataframe: pd.DataFrame, patient_number: str, freq: str) -> pd.DataFrame:
     """
-    Add volunteer's mean ABP, mean EtCO2, and mean FV values as columns to dataframe containing volunteer's JSDsym
+    Add volunteer's mean HR as column to dataframe containing volunteer's JSDsym
     and JSDdiam values
     Params:
         jsd_df (pd.DataFrame): dataframe containing volunteer's JSDsym and JSDdiam values as columns
         dataframe (pd.DataFrame): dataframe containing volunteer's signals as columns
         patient_number (str): volunteer's id number
         freq (str): respiratory rate during controlled breathing
-        window_size (int): moving average window size
     Returns:
-        jsd_df (pd.DataFrame): same dataframe with added volunteer's mean ABP, mean EtCO2, and mean FV values
+        jsd_df (pd.DataFrame): same dataframe with added volunteer's mean HR value
     """
-    for col_name in ['abp_arm', 'etco2', 'fv[cm/s]']:
-        if col_name in dataframe.columns:
-            nan_percent = dataframe[col_name].isnull().sum() * 100 / len(dataframe)
-            if nan_percent != 100.0:
-                jsd_df.at["mean_" + col_name + "_" + freq, patient_number] = dataframe[col_name].rolling(
-                    window=window_size).mean().dropna().mean()
+    jsd_df.at["HR_" + freq, patient_number] = calculate_fundamental_component(dataframe['abp_arm']).mean()
     return jsd_df
 
 
@@ -170,11 +192,8 @@ def joint_symbolic(data_dict: dict, is_fv: bool, heatmap_path: str, jsd_path: st
             jsd_df.at[signal_map[is_fv] + "jsd_sym_" + freq, patient_number] = np.sum(np.diag(relative_patient_matrix))
             jsd_df.at[signal_map[is_fv] + "jsd_diam_" + freq, patient_number] = np.sum(
                 np.diag(np.rot90(relative_patient_matrix)))
-            jsd_df = add_mean_params(jsd_df, dataframe, patient_number, freq)
+            jsd_df = add_mean_hr(jsd_df, dataframe, patient_number, freq)
 
         relative_freq_matrix = freq_matrix.div(np.sum(freq_matrix.values))
         make_and_save_heatmap(relative_freq_matrix, freq, is_fv, heatmap_path)
     save_jsd(is_fv, jsd_df, jsd_path)
-
-
-
